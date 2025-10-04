@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+<title>位取り表</title>
+<style>
+  :root{
+    --bg:#f6f7fb; --card:#ffffff; --ink:#0f172a; --muted:#64748b;
+    --blue:#0ea5e9;  /* 一〜千 */
+    --red:#ef4444;   /* 万〜千万 */
+    --green:#22c55e; /* 億〜千億 */
+    --yellow:#eab308;/* 兆〜千兆 */
+    --gray:#94a3b8;
+    --grid:#e5e7eb; --radius:18px; --gap:6px;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font-family:"BIZ UDGothic","Hiragino Kaku Gothic ProN","Yu Gothic UI",system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP",sans-serif;
+  }
+  h1{margin:8px 0;text-align:center;font-size:clamp(18px,3vw,22px)}
+  #container{display:flex;flex-direction:column;align-items:center;gap:20px;padding-bottom:20px;}
+
+  /* 各セット全体 */
+  .number-set{
+    width:100%;
+    max-width:1100px;
+    background:var(--card);
+    border-radius:var(--radius);
+    box-shadow:0 8px 20px rgba(0,0,0,.06);
+    padding:10px;
+  }
+  .board{
+    display:grid;
+    grid-template-columns: repeat(16, 1fr);
+    gap: var(--gap);
+    width:100%;
+    padding: 0 8px;
+  }
+  .cell{display:flex;flex-direction:column;align-items:center;gap:4px;}
+  input.d{
+    width:100%;aspect-ratio:1/1;
+    text-align:center;font-weight:800;
+    font-size:clamp(16px,2.6vw,26px);
+    border:2px solid var(--grid);border-radius:12px;background:#fff;
+  }
+  input.d:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 4px #dbeafe;}
+  .label{
+    width:100%;aspect-ratio:1/.62;
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;font-weight:900;border-radius:10px;
+    font-size:clamp(10px,1.8vw,14px);user-select:none;
+    visibility:hidden; /* 初期非表示 */
+  }
+  .gray{background:var(--gray);}
+  .g0{background:var(--yellow);}
+  .g1{background:var(--green);}
+  .g2{background:var(--red);}
+  .g3{background:var(--blue);}
+  .bar{
+    display:flex;gap:6px;align-items:center;flex-wrap:wrap;
+    justify-content:space-between;padding:0 8px;margin-top:6px;
+  }
+  .readout{
+    flex:1 1 auto;min-height:38px;padding:8px 10px;border-radius:10px;
+    background:#f8fafc;border:1px solid var(--grid);
+    font-size:clamp(14px,2.4vw,16px)
+  }
+  .btn{
+    appearance:none;border:none;border-radius:10px;padding:8px 12px;
+    background:#2563eb;color:#fff;font-weight:700;cursor:pointer;
+    font-size:clamp(12px,2.2vw,14px);
+  }
+  .btn.sub{background:#fff;color:var(--ink);border:1px solid var(--grid)}
+  #addBtn{
+    margin:10px auto;padding:10px 16px;
+    background:#16a34a;font-weight:700;color:#fff;border:none;border-radius:12px;
+    font-size:clamp(14px,2.4vw,16px);cursor:pointer;
+  }
+</style>
+</head>
+<body>
+  <h1>位取り表（「位取り」：位表示　「追加」：表追加</h1>
+  <div id="container"></div>
+  <button id="addBtn">＋追加</button>
+
+<script>
+(() => {
+  const UNITS = ["千兆","百兆","十兆","兆","千億","百億","十億","億","千万","百万","十万","万","千","百","十","一"];
+
+  // ==== 位取り表を作る関数 ====
+  function createSet(){
+    const wrap=document.createElement('div');
+    wrap.className='number-set';
+
+    // 盤面
+    const board=document.createElement('div');
+    board.className='board';
+
+    const inputs=[],labels=[];
+    for(let i=0;i<16;i++){
+      const col=document.createElement('div');
+      col.className='cell';
+      const inp=document.createElement('input');
+      inp.className='d';
+      inp.maxLength=1;
+      inp.inputMode='numeric';
+      inp.dataset.index=i;
+      const lab=document.createElement('div');
+      lab.className='label gray';
+      lab.style.visibility='hidden';
+      lab.textContent=UNITS[i];
+      col.appendChild(inp);col.appendChild(lab);
+      board.appendChild(col);
+      inputs.push(inp);labels.push(lab);
+    }
+
+    // ボタン類
+    const bar=document.createElement('div');
+    bar.className='bar';
+    const yomiBox=document.createElement('div');
+    yomiBox.className='readout';
+    yomiBox.textContent='（読みがここに出ます）';
+    const btnSpeak=document.createElement('button');
+    btnSpeak.className='btn';
+    btnSpeak.textContent='読み上げ';
+    const btnStop=document.createElement('button');
+    btnStop.className='btn sub';
+    btnStop.textContent='停止';
+    const btnClear=document.createElement('button');
+    btnClear.className='btn sub';
+    btnClear.textContent='クリア';
+    const btnToggle=document.createElement('button');
+    btnToggle.className='btn';
+    btnToggle.textContent='位取り';
+
+    bar.append(yomiBox,btnSpeak,btnStop,btnClear,btnToggle);
+    wrap.append(board,bar);
+
+    // ===== 機能実装 =====
+    const toHalf=s=>s.replace(/[０-９]/g,ch=>String.fromCharCode(ch.charCodeAt(0)-0xFEE0));
+    const numStr=()=>inputs.map(i=>i.value||'0').join('').replace(/^0+(?=\d)/,'')||'0';
+
+    function readJP(n){
+      n=n.replace(/^0+(?=\d)/,'');
+      if(n===''||/^0+$/.test(n)) return '零';
+      const d=['','一','二','三','四','五','六','七','八','九'];
+      const big=['','万','億','兆'];
+      const g=[];
+      for(let i=n.length;i>0;i-=4) g.push(n.substring(Math.max(0,i-4),i));
+      function r4(s){const a=s.padStart(4,'0').split('').map(x=>+x);let o='';
+        if(a[0])o+=(a[0]===1?'千':d[a[0]]+'千');
+        if(a[1])o+=(a[1]===1?'百':d[a[1]]+'百');
+        if(a[2])o+=(a[2]===1?'十':d[a[2]]+'十');
+        if(a[3])o+=d[a[3]];
+        return o;}
+      let y='';
+      for(let i=0;i<g.length;i++){
+        const part=r4(g[i]);if(part)y=part+big[i]+y;
+      }
+      return y||'零';
+    }
+    const update=()=>yomiBox.textContent=readJP(numStr());
+
+    // 入力処理
+    inputs.forEach(inp=>{
+      inp.addEventListener('input',()=>{
+        inp.value=toHalf(inp.value).replace(/[^0-9]/g,'').slice(0,1);
+        update();
+      });
+      inp.addEventListener('keydown',e=>{
+        const idx=parseInt(inp.dataset.index);
+        if(e.key==='ArrowLeft'){e.preventDefault();if(idx>0)inputs[idx-1].focus();}
+        else if(e.key==='ArrowRight'){e.preventDefault();if(idx<15)inputs[idx+1].focus();}
+        else if(e.key==='Backspace'){
+          if(inp.value){inp.value='';update();}
+          else if(idx<15){e.preventDefault();inputs[idx+1].value='';inputs[idx+1].focus();update();}
+        }
+      });
+      inp.addEventListener('paste',e=>e.preventDefault());
+    });
+
+    // ボタン機能
+    btnSpeak.addEventListener('click',()=>{
+      speechSynthesis.cancel();
+      const text=yomiBox.textContent||readJP(numStr());
+      const u=new SpeechSynthesisUtterance(text);
+      u.lang='ja-JP';u.rate=0.95;u.pitch=1.0;
+      speechSynthesis.speak(u);
+    });
+    btnStop.addEventListener('click',()=>speechSynthesis.cancel());
+    btnClear.addEventListener('click',()=>{
+      inputs.forEach(i=>i.value='');
+      update();
+      inputs[15].focus();
+    });
+    let showGrouping=false;
+    btnToggle.addEventListener('click',()=>{
+      showGrouping=!showGrouping;
+      labels.forEach((lab,i)=>{
+        if(showGrouping){
+          lab.textContent=UNITS[i];
+          const colorClass=['g0','g1','g2','g3'][Math.floor(i/4)];
+          lab.className='label '+colorClass;
+          lab.style.visibility='visible';
+        }else{
+          lab.textContent='';
+          lab.className='label gray';
+          lab.style.visibility='hidden';
+        }
+      });
+    });
+
+    update();
+    inputs[15].focus();
+    return wrap;
+  }
+
+  // ===== 初期表示と追加機能 =====
+  const container=document.getElementById('container');
+  const addBtn=document.getElementById('addBtn');
+
+  function addSet(){
+    const set=createSet();
+    container.appendChild(set);
+  }
+
+  addBtn.addEventListener('click',addSet);
+
+  // 最初の1つ
+  addSet();
+})();
+</script>
+</body>
+</html>
