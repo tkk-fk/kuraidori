@@ -14,14 +14,37 @@
     --yellow:#eab308;/* 兆〜千兆 */
     --gray:#94a3b8;
     --grid:#e5e7eb; --radius:18px; --gap:6px;
+
+    /* ✅ 盤面マスの基準サイズ（スマホは小さめ、PCは大きめ） */
+    --cell: clamp(36px, 8.2vw, 62px);
+
+    --safe-t: env(safe-area-inset-top, 0px);
+    --safe-r: env(safe-area-inset-right, 0px);
+    --safe-b: env(safe-area-inset-bottom, 0px);
+    --safe-l: env(safe-area-inset-left, 0px);
   }
+
   *{box-sizing:border-box}
   body{
     margin:0;background:var(--bg);color:var(--ink);
     font-family:"BIZ UDGothic","Hiragino Kaku Gothic ProN","Yu Gothic UI",system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP",sans-serif;
+    padding:
+      calc(10px + var(--safe-t))
+      calc(10px + var(--safe-r))
+      calc(14px + var(--safe-b))
+      calc(10px + var(--safe-l));
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
   }
-  h1{margin:8px 0;text-align:center;font-size:clamp(18px,3vw,22px)}
-  #container{display:flex;flex-direction:column;align-items:center;gap:20px;padding-bottom:20px;}
+
+  h1{margin:8px 0 12px;text-align:center;font-size:clamp(18px,3vw,22px)}
+  #container{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:20px;
+    padding-bottom: 10px;
+  }
 
   /* 各セット全体 */
   .number-set{
@@ -30,54 +53,137 @@
     background:var(--card);
     border-radius:var(--radius);
     box-shadow:0 8px 20px rgba(0,0,0,.06);
-    padding:10px;
+    padding:12px 10px;
   }
+
+  /* ✅ スマホ対策：盤面を横スクロール可能に */
+  .board-wrap{
+    width:100%;
+    overflow-x:auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 14px;
+    padding-bottom: 4px;
+  }
+
   .board{
     display:grid;
-    grid-template-columns: repeat(16, 1fr);
+    /* ✅ 1frだと潰れるので固定幅に */
+    grid-template-columns: repeat(16, var(--cell));
     gap: var(--gap);
-    width:100%;
+    width: max-content;
+    min-width: calc(16 * var(--cell) + 15 * var(--gap));
     padding: 0 8px;
+    margin: 0 auto;
   }
-  .cell{display:flex;flex-direction:column;align-items:center;gap:4px;}
+
+  .cell{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:4px;
+    width: var(--cell);
+  }
+
   input.d{
-    width:100%;aspect-ratio:1/1;
-    text-align:center;font-weight:800;
-    font-size:clamp(16px,2.6vw,26px);
-    border:2px solid var(--grid);border-radius:12px;background:#fff;
+    width:100%;
+    aspect-ratio:1/1;
+    text-align:center;
+    font-weight:800;
+    font-size:clamp(16px, 4.6vw, 26px);
+    border:2px solid var(--grid);
+    border-radius:12px;
+    background:#fff;
+    touch-action: manipulation;
   }
-  input.d:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 4px #dbeafe;}
+  input.d:focus{
+    outline:none;
+    border-color:#2563eb;
+    box-shadow:0 0 0 4px #dbeafe;
+  }
+
   .label{
-    width:100%;aspect-ratio:1/.62;
-    display:flex;align-items:center;justify-content:center;
-    color:#fff;font-weight:900;border-radius:10px;
-    font-size:clamp(10px,1.8vw,14px);user-select:none;
-    visibility:hidden; /* 初期非表示 */
+    width:100%;
+    aspect-ratio:1/.62;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#fff;
+    font-weight:900;
+    border-radius:10px;
+    font-size:clamp(10px, 2.9vw, 14px);
+    user-select:none;
+    visibility:hidden; /* ここはJSでON/OFF */
   }
   .gray{background:var(--gray);}
   .g0{background:var(--yellow);}
   .g1{background:var(--green);}
   .g2{background:var(--red);}
   .g3{background:var(--blue);}
+
   .bar{
-    display:flex;gap:6px;align-items:center;flex-wrap:wrap;
-    justify-content:space-between;padding:0 8px;margin-top:6px;
+    display:flex;
+    gap:8px;
+    align-items:center;
+    flex-wrap:wrap;
+    justify-content:space-between;
+    padding:0 8px;
+    margin-top:10px;
   }
+
   .readout{
-    flex:1 1 auto;min-height:38px;padding:8px 10px;border-radius:10px;
-    background:#f8fafc;border:1px solid var(--grid);
-    font-size:clamp(14px,2.4vw,16px)
+    flex:1 1 auto;
+    min-height:40px;
+    padding:9px 10px;
+    border-radius:10px;
+    background:#f8fafc;
+    border:1px solid var(--grid);
+    font-size:clamp(14px,2.4vw,16px);
   }
+
   .btn{
-    appearance:none;border:none;border-radius:10px;padding:8px 12px;
-    background:#2563eb;color:#fff;font-weight:700;cursor:pointer;
+    appearance:none;
+    border:none;
+    border-radius:10px;
+    padding:9px 12px;
+    background:#2563eb;
+    color:#fff;
+    font-weight:800;
+    cursor:pointer;
     font-size:clamp(12px,2.2vw,14px);
+    min-height:44px; /* ✅ スマホで押しやすく */
+    touch-action: manipulation;
   }
   .btn.sub{background:#fff;color:var(--ink);border:1px solid var(--grid)}
+
+  /* ✅ 「位取り」ボタンの押下状態の見た目 */
+  .btn.toggle[aria-pressed="true"]{
+    background:#0ea5e9;
+    box-shadow: 0 0 0 3px rgba(14,165,233,.22);
+  }
+  .btn.toggle[aria-pressed="false"]{
+    background:#2563eb;
+    opacity:.9;
+  }
+
   #addBtn{
-    margin:10px auto;padding:10px 16px;
-    background:#16a34a;font-weight:700;color:#fff;border:none;border-radius:12px;
-    font-size:clamp(14px,2.4vw,16px);cursor:pointer;
+    width: min(560px, 100%);
+    margin: 8px auto 0;
+    padding:12px 16px;
+    background:#16a34a;
+    font-weight:900;
+    color:#fff;
+    border:none;
+    border-radius:12px;
+    font-size:clamp(14px,2.4vw,16px);
+    cursor:pointer;
+    min-height:48px;
+  }
+
+  /* ✅ スマホでは読み欄を1段目にしてボタンを並べやすく */
+  @media (max-width: 600px){
+    .readout{ flex: 1 1 100%; }
+    .bar .btn{ flex: 1 1 calc(50% - 8px); }
+    .bar{ justify-content:flex-start; }
   }
 </style>
 </head>
@@ -95,6 +201,10 @@
     const wrap=document.createElement('div');
     wrap.className='number-set';
 
+    // ✅ 盤面ラップ（横スクロール用）
+    const boardWrap=document.createElement('div');
+    boardWrap.className='board-wrap';
+
     // 盤面
     const board=document.createElement('div');
     board.className='board';
@@ -103,41 +213,56 @@
     for(let i=0;i<16;i++){
       const col=document.createElement('div');
       col.className='cell';
+
       const inp=document.createElement('input');
       inp.className='d';
       inp.maxLength=1;
       inp.inputMode='numeric';
       inp.dataset.index=i;
+
       const lab=document.createElement('div');
       lab.className='label gray';
       lab.style.visibility='hidden';
       lab.textContent=UNITS[i];
-      col.appendChild(inp);col.appendChild(lab);
+
+      col.appendChild(inp);
+      col.appendChild(lab);
       board.appendChild(col);
-      inputs.push(inp);labels.push(lab);
+
+      inputs.push(inp);
+      labels.push(lab);
     }
+
+    boardWrap.appendChild(board);
 
     // ボタン類
     const bar=document.createElement('div');
     bar.className='bar';
+
     const yomiBox=document.createElement('div');
     yomiBox.className='readout';
     yomiBox.textContent='（読みがここに出ます）';
+
     const btnSpeak=document.createElement('button');
     btnSpeak.className='btn';
     btnSpeak.textContent='読み上げ';
+
     const btnStop=document.createElement('button');
     btnStop.className='btn sub';
     btnStop.textContent='停止';
+
     const btnClear=document.createElement('button');
     btnClear.className='btn sub';
     btnClear.textContent='クリア';
+
     const btnToggle=document.createElement('button');
-    btnToggle.className='btn';
+    btnToggle.className='btn toggle';
     btnToggle.textContent='位取り';
+    btnToggle.setAttribute('aria-pressed', 'true'); // ✅ 初期ONにする
 
     bar.append(yomiBox,btnSpeak,btnStop,btnClear,btnToggle);
-    wrap.append(board,bar);
+
+    wrap.append(boardWrap,bar);
 
     // ===== 機能実装 =====
     const toHalf=s=>s.replace(/[０-９]/g,ch=>String.fromCharCode(ch.charCodeAt(0)-0xFEE0));
@@ -150,19 +275,40 @@
       const big=['','万','億','兆'];
       const g=[];
       for(let i=n.length;i>0;i-=4) g.push(n.substring(Math.max(0,i-4),i));
-      function r4(s){const a=s.padStart(4,'0').split('').map(x=>+x);let o='';
+      function r4(s){
+        const a=s.padStart(4,'0').split('').map(x=>+x);
+        let o='';
         if(a[0])o+=(a[0]===1?'千':d[a[0]]+'千');
         if(a[1])o+=(a[1]===1?'百':d[a[1]]+'百');
         if(a[2])o+=(a[2]===1?'十':d[a[2]]+'十');
         if(a[3])o+=d[a[3]];
-        return o;}
+        return o;
+      }
       let y='';
       for(let i=0;i<g.length;i++){
-        const part=r4(g[i]);if(part)y=part+big[i]+y;
+        const part=r4(g[i]);
+        if(part) y = part + big[i] + y;
       }
       return y||'零';
     }
     const update=()=>yomiBox.textContent=readJP(numStr());
+
+    // ✅ 位取り表示のON/OFF（共通化）
+    let showGrouping=true; // ✅ 初期ON
+    function applyGrouping(){
+      btnToggle.setAttribute('aria-pressed', String(showGrouping));
+      labels.forEach((lab,i)=>{
+        if(showGrouping){
+          lab.textContent=UNITS[i];
+          const colorClass=['g0','g1','g2','g3'][Math.floor(i/4)];
+          lab.className='label '+colorClass;
+          lab.style.visibility='visible';
+        }else{
+          lab.className='label gray';
+          lab.style.visibility='hidden';
+        }
+      });
+    }
 
     // 入力処理
     inputs.forEach(inp=>{
@@ -170,13 +316,30 @@
         inp.value=toHalf(inp.value).replace(/[^0-9]/g,'').slice(0,1);
         update();
       });
+
+      // ✅ スマホ：フォーカスしたマスが見える位置に来るように補助
+      inp.addEventListener('focus',()=>{
+        inp.scrollIntoView({behavior:'smooth', block:'nearest', inline:'center'});
+      });
+
       inp.addEventListener('keydown',e=>{
-        const idx=parseInt(inp.dataset.index);
-        if(e.key==='ArrowLeft'){e.preventDefault();if(idx>0)inputs[idx-1].focus();}
-        else if(e.key==='ArrowRight'){e.preventDefault();if(idx<15)inputs[idx+1].focus();}
-        else if(e.key==='Backspace'){
-          if(inp.value){inp.value='';update();}
-          else if(idx<15){e.preventDefault();inputs[idx+1].value='';inputs[idx+1].focus();update();}
+        const idx=parseInt(inp.dataset.index,10);
+        if(e.key==='ArrowLeft'){
+          e.preventDefault();
+          if(idx>0)inputs[idx-1].focus();
+        }else if(e.key==='ArrowRight'){
+          e.preventDefault();
+          if(idx<15)inputs[idx+1].focus();
+        }else if(e.key==='Backspace'){
+          if(inp.value){
+            inp.value='';
+            update();
+          }else if(idx<15){
+            e.preventDefault();
+            inputs[idx+1].value='';
+            inputs[idx+1].focus();
+            update();
+          }
         }
       });
       inp.addEventListener('paste',e=>e.preventDefault());
@@ -187,34 +350,36 @@
       speechSynthesis.cancel();
       const text=yomiBox.textContent||readJP(numStr());
       const u=new SpeechSynthesisUtterance(text);
-      u.lang='ja-JP';u.rate=0.95;u.pitch=1.0;
+      u.lang='ja-JP';
+      u.rate=0.95;
+      u.pitch=1.0;
       speechSynthesis.speak(u);
     });
+
     btnStop.addEventListener('click',()=>speechSynthesis.cancel());
+
     btnClear.addEventListener('click',()=>{
       inputs.forEach(i=>i.value='');
       update();
+      // 一の位へ
       inputs[15].focus();
     });
-    let showGrouping=false;
+
     btnToggle.addEventListener('click',()=>{
       showGrouping=!showGrouping;
-      labels.forEach((lab,i)=>{
-        if(showGrouping){
-          lab.textContent=UNITS[i];
-          const colorClass=['g0','g1','g2','g3'][Math.floor(i/4)];
-          lab.className='label '+colorClass;
-          lab.style.visibility='visible';
-        }else{
-          lab.textContent='';
-          lab.className='label gray';
-          lab.style.visibility='hidden';
-        }
-      });
+      applyGrouping();
     });
 
+    // ✅ 初期状態を反映（最初から位取りON）
+    applyGrouping();
     update();
-    inputs[15].focus();
+
+    // 一の位へフォーカス（右端が見えるようスクロールも）
+    requestAnimationFrame(()=>{
+      inputs[15].focus();
+      inputs[15].scrollIntoView({behavior:'smooth', block:'nearest', inline:'center'});
+    });
+
     return wrap;
   }
 
@@ -235,3 +400,4 @@
 </script>
 </body>
 </html>
+
